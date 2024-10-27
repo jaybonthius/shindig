@@ -31,11 +31,9 @@
          "cross-references.rkt"
          "decode.rkt"
          "decoders.rkt"
-         "free-response.rkt"
          "math.rkt"
          "media.rkt"
          "miscellaneous.rkt"
-         "questions.rkt"
          "sqlite.rkt"
          "tags.rkt"
          "utils.rkt")
@@ -46,11 +44,9 @@
          (all-from-out "cross-references.rkt")
          (all-from-out "decode.rkt")
          (all-from-out "decoders.rkt")
-         (all-from-out "free-response.rkt")
          (all-from-out "math.rkt")
          (all-from-out "media.rkt")
          (all-from-out "miscellaneous.rkt")
-         (all-from-out "questions.rkt")
          (all-from-out "sqlite.rkt")
          (all-from-out "tags.rkt")
          (all-from-out "utils.rkt"))

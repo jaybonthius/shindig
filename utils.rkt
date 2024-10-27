@@ -55,60 +55,6 @@
   output-path
   "")
 
-(define (upsert-question question-id answers)
-  (define db-file (build-path (config:sqlite-path) "questions.sqlite"))
-  (define conn (try-connect db-file))
-  (when conn
-    (with-handlers ([exn:fail? (lambda (e)
-                                 (printf "Error during database operations: ~a\n" (exn-message e)))])
-      ; todo: have this be a separate thing upon local setup
-      (query-exec
-       conn
-       "CREATE TABLE IF NOT EXISTS questions (
-                id TEXT PRIMARY KEY NOT NULL,
-                answer JSON
-            )")
-
-      (define json-answers (jsexpr->string answers))
-
-      (query-exec
-       conn
-       "INSERT OR REPLACE INTO questions (id, answer)
-                   VALUES (?, json(?))"
-       question-id
-       json-answers)
-
-      (disconnect conn)
-
-      (printf "Database operations completed successfully.\n"))))
-
-(define (upsert-free-response field-id question-id answer)
-  (define db-file (build-path (config:sqlite-path) "free-response-questions.sqlite"))
-  (define conn (try-connect db-file))
-  (when conn
-    (with-handlers ([exn:fail? (lambda (e)
-                                 (printf "Error during database operations: ~a\n" (exn-message e)))])
-      ; todo: have this be a separate thing upon local setup
-      (query-exec
-       conn
-       "CREATE TABLE IF NOT EXISTS free_response_questions (
-                field_id TEXT PRIMARY KEY NOT NULL,
-                question_id TEXT NOT NULL,
-                answer TEXT
-            )")
-
-      (query-exec
-       conn
-       "INSERT OR REPLACE INTO free_response_questions (field_id, question_id, answer)
-                   VALUES (?, ?, ?)"
-       field-id
-       question-id
-       answer)
-
-      (disconnect conn)
-
-      (printf "Database operations completed successfully.\n"))))
-
 (define (upsert-xref type id title source)
   (define db-file (build-path (config:sqlite-path) "cross-references.sqlite"))
 
@@ -132,3 +78,9 @@
 
 (define (to-kebab-case str)
   (string-join (map string-downcase (regexp-split #rx"[^a-zA-Z0-9]+" (string-trim str))) "-"))
+
+(define (string->boolean str)
+  (and (member (string-downcase (string-trim str))
+              '("#f" "#false" "false"))
+      #t)
+)
