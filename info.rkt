@@ -1,6 +1,10 @@
 #lang info
 (define collection "shindig")
-(define deps '("base"))
+(define deps '("db-lib"
+               "pollen"
+               "sugar"
+               "txexpr"
+               "base"))
 (define build-deps
   '("scribble-lib" "racket-doc"
                    "rackunit-lib"
