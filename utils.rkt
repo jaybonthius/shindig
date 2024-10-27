@@ -80,7 +80,11 @@
   (string-join (map string-downcase (regexp-split #rx"[^a-zA-Z0-9]+" (string-trim str))) "-"))
 
 (define (string->boolean str)
-  (and (member (string-downcase (string-trim str))
-              '("#f" "#false" "false"))
-      #t)
-)
+  (cond
+    [(boolean? str) str]
+    [else
+     (define trimmed (string-downcase (string-trim str)))
+     (cond
+       [(member trimmed '("#t" "#true" "true")) #t]
+       [(member trimmed '("#f" "#false" "false")) #f]
+       [else (error "Invalid boolean string:" str)])]))
