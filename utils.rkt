@@ -7,6 +7,7 @@
          racket/file
          racket/match
          racket/string
+         sugar
          (prefix-in config: "config.rkt")
          "sqlite.rkt")
 
@@ -15,9 +16,14 @@
 ; for utilities
 
 (define (pollen-request req)
-  (if (config:pretty-url)
-      req
-      (string-append req ".html")))
+  (string-append (config:baseurl)
+                 (cond
+                   [(config:pretty-url)
+                    (if (has-ext? req "html")
+                        (remove-ext req)
+                        req)]
+                   [(has-ext? req "html") req]
+                   [else (path->string (add-ext req "html"))])))
 
 (define (validate-uid uid)
   (when (or (not (string? uid)) (string=? uid ""))

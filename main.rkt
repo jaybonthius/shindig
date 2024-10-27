@@ -36,6 +36,7 @@
          "miscellaneous.rkt"
          "sqlite.rkt"
          "tags.rkt"
+         "template.rkt"
          "utils.rkt")
 
 ;; Re-provide everything from those modules
@@ -49,6 +50,7 @@
          (all-from-out "miscellaneous.rkt")
          (all-from-out "sqlite.rkt")
          (all-from-out "tags.rkt")
+         (all-from-out "template.rkt")
          (all-from-out "utils.rkt"))
 
 (module+ test

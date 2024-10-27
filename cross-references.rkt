@@ -45,8 +45,7 @@
      (define reference-class (format "~a-preview" type-id))
      (define reference-container-class (format "~a-preview-container" type-id))
      ;  TODO: don't hardcode "lesson"
-     (define in-context-link
-       (pollen-request (format "~alesson/~a#~a" (config:baseurl) source type-id)))
+     (define in-context-link (pollen-request (format "lesson/~a#~a" source type-id)))
      (define reference-link
        (if (equal? source current-source)
            `(a [(href ,(format "#~a" type-id))] "View in context")
@@ -67,8 +66,7 @@
             "on click get the next .~a toggle .expanded on it on htmx:afterRequest add .htmx-added to the next .~a"
             reference-container-class
             reference-container-class))
-         (hx-get ,(pollen-request
-                   (format "~aknowl/~a/~a" (config:baseurl) (symbol->string type) uid)))
+         (hx-get ,(pollen-request (format "knowl/~a/~a" (symbol->string type) uid)))
          (hx-target ,(format "next .~a" reference-class))
          (hx-trigger "click once")
          (preload "mouseover")]
