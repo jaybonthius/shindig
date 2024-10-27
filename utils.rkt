@@ -14,6 +14,11 @@
 
 ; for utilities
 
+(define (pollen-request req)
+  (if (config:pretty-url)
+      req
+      (string-append req ".html")))
+
 (define (validate-uid uid)
   (when (or (not (string? uid)) (string=? uid ""))
     (raise-argument-error 'fr-field "non-empty string" uid)))
