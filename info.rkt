@@ -11,7 +11,6 @@
                    "reprovide-lang-lib"
                    "racket-langserver"
                    "buid"
-                   "html-printer"
                    "data"
                    "file-watchers"
                    "dirname"

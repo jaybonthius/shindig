@@ -1,7 +1,6 @@
 #lang racket
 
-(require html-printer
-         pollen/core
+(require pollen/core
          pollen/pagetree
          pollen/template
          racket/pretty
