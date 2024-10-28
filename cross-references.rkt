@@ -48,14 +48,15 @@
      (define in-context-link (pollen-request (format "lesson/~a#~a" source type-id)))
      (define reference-link
        (if (equal? source current-source)
-           `(a [(href ,(format "#~a" type-id))] "View in context")
+           `(a [(href ,(format "#~a" type-id)) (class "view-in-context")] "View in context")
            `(a [(href ,in-context-link)
                 (hx-get ,in-context-link)
                 (hx-target "#main")
                 (hx-select "#main")
                 (hx-push-url "true")
                 (@click ,(format "activePage = '~a'" in-context-link))
-                (:class ,(format "{ 'active': activePage === '~a' }" in-context-link))]
+                (:class ,(format "{ 'active': activePage === '~a' }" in-context-link))
+                (class "view-in-context")]
                "View in context")))
 
      (@

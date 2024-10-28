@@ -11,6 +11,7 @@
 (provide (all-defined-out))
 
 (define (make-page-link page-path)
+  (printf (format "Making page link for ~a\n" page-path))
   `(a [[href ,(pollen-request (symbol->string page-path))]] ,(select-from-metas 'title page-path)))
 
 (define (make-toc-item page-path)
@@ -24,6 +25,4 @@
   (printf "Top-level pages: ~a\n" top-level-pages)
   (if (or (not top-level-pages) (null? top-level-pages))
       ""
-      `(nav [(class "table-of-contents")]
-            (h2 "Table of Contents")
-            (ul ,@(map make-toc-item top-level-pages)))))
+      `(nav [(class "table-of-contents")] (h2 "Shindig") (ul ,@(map make-toc-item top-level-pages)))))

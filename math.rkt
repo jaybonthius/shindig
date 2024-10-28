@@ -1,7 +1,7 @@
 #lang racket/base
 
 (require racket/string
-"config.rkt")
+         "config.rkt")
 
 (provide (all-defined-out))
 
@@ -9,6 +9,6 @@
   `(script [(type "math/tex; mode=text")] ,(format "\\(~a\\)" (string-join latex ""))))
 
 (define ($$ . latex)
-  `(div [(class "flex justify-center")]
-        (div [(class "inline-block")]
+  `(div [(class "math-container")]
+        (div [(class "math-wrapper")]
              (script [(type "math/tex; mode=display")] ,(format "\\[~a\\]" (string-join latex ""))))))

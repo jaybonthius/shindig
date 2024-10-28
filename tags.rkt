@@ -1,15 +1,16 @@
 #lang racket/base
 
-(require pollen/tag
-         pollen/core
-         pollen/render
+(require pollen/core
          pollen/decode
-         sugar
+         pollen/render
+         pollen/tag
          racket/file
+         racket/list
+         racket/match
          racket/path
          racket/port
-         racket/list
-         racket/string)
+         racket/string
+         sugar)
 
 (provide (all-defined-out))
 
@@ -62,8 +63,27 @@
   (define li-tag (default-tag-function 'li))
   (map (λ (lip) (apply li-tag lip)) list-of-li-paragraphs))
 
-(define (make-list-function tag [attrs empty])
-  (λ args (list* tag attrs (detect-list-items args))))
+(define ((make-list-function tag [attrs empty]) . args)
+  (list* tag attrs (detect-list-items args)))
 
 (define bullet-list (make-list-function 'ul))
 (define numbered-list (make-list-function 'ol))
+
+(define (quick-table . tx-elements)
+  (define text-rows (filter-not whitespace? tx-elements))
+  (define rows-of-text-cells
+    (for/list ([text-row (in-list text-rows)])
+      (for/list ([text-cell (in-list (string-split text-row "|"))])
+        (string-trim text-cell))))
+
+  (match-define (list tr-tag td-tag th-tag) (map default-tag-function '(tr td th)))
+
+  (define html-rows
+    (match-let ([(cons header-row other-rows) rows-of-text-cells])
+      (cons (map th-tag header-row)
+            (for/list ([row (in-list other-rows)])
+              (map td-tag row)))))
+
+  (cons 'table
+        (for/list ([html-row (in-list html-rows)])
+          (apply tr-tag html-row))))
