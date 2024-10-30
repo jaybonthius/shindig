@@ -11,7 +11,15 @@
 
 (define (make-page-link page-path)
   (printf (format "Making page link for ~a\n" page-path))
-  `(a [[href ,(pollen-request (symbol->string page-path))]] ,(select-from-metas 'title page-path)))
+  `(a [(href ,(pollen-request (symbol->string page-path)))
+       (hx-get ,(pollen-request (symbol->string page-path)))
+       (hx-select "#main")
+       (hx-swap "outerHTML")
+       (hx-target "#main")
+       (hx-push-url "true")
+       (@click "activePage = '◊(baseurl)'")
+       (:class "{ 'active': activePage === '/' }")]
+      ,(select-from-metas 'title page-path)))
 
 (define (make-toc-item page-path)
   (define child-pages (children page-path))

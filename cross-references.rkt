@@ -44,8 +44,7 @@
      (define current-source (remove-ext* (hash-ref (current-metas) 'here-path)))
      (define reference-class (format "~a-preview" type-id))
      (define reference-container-class (format "~a-preview-container" type-id))
-     ;  TODO: don't hardcode "lesson"
-     (define in-context-link (pollen-request (format "lesson/~a#~a" source type-id)))
+     (define in-context-link (format "~a#~a" (pollen-request source) type-id))
      (define reference-link
        (if (equal? source current-source)
            `(a [(href ,(format "#~a" type-id)) (class "view-in-context")] "View in context")

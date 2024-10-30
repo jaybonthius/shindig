@@ -23,7 +23,8 @@
                               (list (string-titlecase (symbol->string type)) ": " title))))
           (div ,@body)))
 
-  (define source (remove-ext* (file-name-from-path (hash-ref (current-metas) 'here-path))))
+  (define abs-path (remove-ext* (hash-ref (current-metas) 'here-path)))
+  (define source (find-relative-path (pollen-dir) abs-path))
 
   (upsert-xref type id title source)
   `(div
