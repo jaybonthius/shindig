@@ -2,6 +2,7 @@
 
 (require db
          pollen/core
+         pollen/setup
          racket/port
          racket/string
          sugar
@@ -35,43 +36,46 @@
   (with-input-from-string str (lambda () (read))))
 
 (define (ref #:type type #:uid uid)
-  (define generate-references (equal? (getenv "POLLEN") "generate-xrefs"))
-  (cond
-    [generate-references `(button [(class "btn")] "References have not been generated yet!!")]
-    [else
-     (define type-id (format "~a-~a" (symbol->string type) uid))
-     (define-values (source title) (get-xref-source-and-title type type-id))
-     (define current-source (remove-ext* (hash-ref (current-metas) 'here-path)))
-     (define reference-class (format "~a-preview" type-id))
-     (define reference-container-class (format "~a-preview-container" type-id))
-     (define in-context-link (format "~a#~a" (pollen-request source) type-id))
-     (define reference-link
-       (if (equal? source current-source)
-           `(a [(href ,(format "#~a" type-id)) (class "view-in-context")] "View in context")
-           `(a [(href ,in-context-link)
-                (hx-get ,in-context-link)
-                (hx-target "#main")
-                (hx-select "#main")
-                (hx-push-url "true")
-                (@click ,(format "activePage = '~a'" in-context-link))
-                (:class ,(format "{ 'active': activePage === '~a' }" in-context-link))
-                (class "view-in-context")]
-               "View in context")))
+  (case (current-poly-target)
+    [(html)
+     (define generate-references (equal? (getenv "POLLEN") "generate-xrefs"))
+     (cond
+       [generate-references `(button [(class "btn")] "References have not been generated yet!!")]
+       [else
+        (define type-id (format "~a-~a" (symbol->string type) uid))
+        (define-values (source title) (get-xref-source-and-title type type-id))
+        (define current-source (remove-ext* (hash-ref (current-metas) 'here-path)))
+        (define reference-class (format "~a-preview" type-id))
+        (define reference-container-class (format "~a-preview-container" type-id))
+        (define in-context-link (format "~a#~a" (pollen-request source) type-id))
+        (define reference-link
+          (if (equal? source current-source)
+              `(a [(href ,(format "#~a" type-id)) (class "view-in-context")] "View in context")
+              `(a [(href ,in-context-link)
+                   (hx-get ,in-context-link)
+                   (hx-target "#main")
+                   (hx-select "#main")
+                   (hx-push-url "true")
+                   (@click ,(format "activePage = '~a'" in-context-link))
+                   (:class ,(format "{ 'active': activePage === '~a' }" in-context-link))
+                   (class "view-in-context")]
+                  "View in context")))
 
-     (@
-      `(a
-        [(class "reference-link")
-         (script
-          ,(format
-            "on click get the next .~a toggle .expanded on it on htmx:afterRequest add .htmx-added to the next .~a"
-            reference-container-class
-            reference-container-class))
-         (hx-get ,(pollen-request (format "knowl/~a/~a" (symbol->string type) uid)))
-         (hx-target ,(format "next .~a" reference-class))
-         (hx-trigger "click once")
-         (preload "mouseover")]
-        ,title)
-      `(div [(class ,(format "reference-container ~a" reference-container-class))]
-            (div (div [(class "reference-subcontainer")]
-                      (div [(class ,(format "~a" reference-class))])
-                      ,reference-link))))]))
+        (@
+         `(a
+           [(class "reference-link")
+            (script
+             ,(format
+               "on click get the next .~a toggle .expanded on it on htmx:afterRequest add .htmx-added to the next .~a"
+               reference-container-class
+               reference-container-class))
+            (hx-get ,(pollen-request (format "knowl/~a/~a" (symbol->string type) uid)))
+            (hx-target ,(format "next .~a" reference-class))
+            (hx-trigger "click once")
+            (preload "mouseover")]
+           ,title)
+         `(div [(class ,(format "reference-container ~a" reference-container-class))]
+               (div (div [(class "reference-subcontainer")]
+                         (div [(class ,(format "~a" reference-class))])
+                         ,reference-link))))])]
+    [(pdf) ""]))

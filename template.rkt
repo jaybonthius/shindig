@@ -29,7 +29,6 @@
 
 (define (generate-toc str)
   (define top-level-pages (children 'pagetree-root))
-  (printf "Top-level pages: ~a\n" top-level-pages)
   (if (or (not top-level-pages) (null? top-level-pages))
       ""
       `(nav [(class "table-of-contents")] (h2 "Shindig") (ul ,@(map make-toc-item top-level-pages)))))
