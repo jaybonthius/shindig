@@ -27,23 +27,23 @@
 (define (h1 . text)
   (case (current-poly-target)
     [(html) `(h1 ,@text)]
-    [(tex) `(txt ,@text)]))
+    [(tex pdf) `(txt ,@text)]))
 
 (define (h2 . text)
   (case (current-poly-target)
     [(html) `(h2 ,@text)]
-    [(tex) `(txt ,@text)]))
+    [(tex pdf) `(txt ,@text)]))
 
 ; Basic text formatting
 (define (strong . text)
   (case (current-poly-target)
     [(html htm) `(strong ,@text)]
-    [(pdf) `(txt "\\textbf{" ,@text "}")]))
+    [(tex pdf) `(txt "\\textbf{" ,@text "}")]))
 
 (define (emph . text)
   (case (current-poly-target)
     [(html htm) `(em ,@text)]
-    [(pdf) `(txt "\\emph{" ,@text "}")]))
+    [(tex pdf) `(txt "\\emph{" ,@text "}")]))
 
 (define (strike . text)
   `(del ,@text))

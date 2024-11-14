@@ -34,7 +34,7 @@
                      (component-type ,(symbol->string type))
                      (component-id ,uid))
            ,component)]
-    [(pdf) ""]))
+    [(tex pdf) ""]))
 
 (define theorem (make-component-function 'theorem))
 (define definition (make-component-function 'definition))

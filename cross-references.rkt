@@ -78,4 +78,4 @@
                (div (div [(class "reference-subcontainer")]
                          (div [(class ,(format "~a" reference-class))])
                          ,reference-link))))])]
-    [(pdf) ""]))
+    [(tex pdf) ""]))

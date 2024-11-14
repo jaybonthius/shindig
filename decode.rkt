@@ -38,7 +38,7 @@ code as a valid X-expression rather than as a string.
 
 (define (root . elements)
   (case (current-poly-target)
-    [(pdf)
+    [(tex pdf)
      (define first-pass
        (decode-elements elements
                         #:inline-txexpr-proc (compose1 txt-decode hyperlink-decoder)

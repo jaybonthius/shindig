@@ -7,7 +7,9 @@
 (provide (all-defined-out))
 
 (define ($ . latex)
-  `(script [(type "math/tex; mode=text")] ,(format "\\(~a\\)" (string-join latex ""))))
+  (case (current-poly-target)
+    [(html) `(script [(type "math/tex; mode=text")] ,(format "\\(~a\\)" (string-join latex "")))]
+    [(tex pdf) `(txt-noescape "\\(~a\\)" ,(string-join latex ""))]))
 
 (define ($$ . latex)
   (case (current-poly-target)
@@ -16,7 +18,7 @@
            (div [(class "math-wrapper")]
                 (script [(type "math/tex; mode=display")]
                         ,(format "\\[~a\\]" (string-join latex "")))))]
-    [(pdf) `(txt-noescape "\\[" ,@latex "\\]")]))
+    [(tex pdf) `(txt-noescape "\\[" ,@latex "\\]")]))
 
 (define (equation . latex)
   (case (current-poly-target)
@@ -26,4 +28,4 @@
                 (script [(type "math/tex; mode=display")]
                         ,(format "\\[\\begin{equation}~a\\end{equation}\\]"
                                  (string-join latex "")))))]
-    [(pdf) `(txt-noescape "\\begin{equation}" ,@latex "\\end{equation}")]))
+    [(tex pdf) `(txt-noescape "\\begin{equation}" ,@latex "\\end{equation}")]))

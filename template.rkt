@@ -3,8 +3,11 @@
 (require pollen/core
          pollen/pagetree
          pollen/template
+         pollen/setup
+         sugar
          racket/pretty
          txexpr
+         (prefix-in config: "config.rkt")
          "utils.rkt")
 
 (provide (all-defined-out))
@@ -29,6 +32,16 @@
 
 (define (generate-toc str)
   (define top-level-pages (children 'pagetree-root))
-  (if (or (not top-level-pages) (null? top-level-pages))
-      ""
-      `(nav [(class "table-of-contents")] (h2 "Shindig") (ul ,@(map make-toc-item top-level-pages)))))
+  (case (current-poly-target)
+    [(html)
+     (if (or (not top-level-pages) (null? top-level-pages))
+         ""
+         `(nav [(class "table-of-contents")]
+               (h2 "Shindig")
+               (ul ,@(map make-toc-item top-level-pages))))]
+    [(tex pdf)
+     (define pagetree (get-pagetree (build-path (config:pollen-dir) "wholebook.ptree")))
+     (define (wrap-include filename)
+       (format "\\include{~a}" (remove-ext filename)))
+     (define all-pages (pagetree->list pagetree))
+     (string-join (map wrap-include all-pages) "\n")]))
