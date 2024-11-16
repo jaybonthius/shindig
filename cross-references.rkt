@@ -78,4 +78,4 @@
                (div (div [(class "reference-subcontainer")]
                          (div [(class ,(format "~a" reference-class))])
                          ,reference-link))))])]
-    [(tex pdf) ""]))
+    [(tex pdf) "THIS IS A CROSS REFERENCE"]))

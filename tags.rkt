@@ -32,7 +32,7 @@
 (define (h2 . text)
   (case (current-poly-target)
     [(html) `(h2 ,@text)]
-    [(tex pdf) `(txt ,@text)]))
+    [(tex pdf) `(txt "\\subsection*{" ,@text "}")]))
 
 ; Basic text formatting
 (define (strong . text)
