@@ -55,8 +55,7 @@
   (unless (file-exists? template-path)
     (with-output-to-file template-path
                          (lambda ()
-                           (displayln "◊(require html-printer)")
-                           (displayln "◊(map xexpr->html5 (select-from-doc 'body here))"))))
+                           (displayln "◊(map ->html (select-from-doc 'body here))"))))
 
   (render-to-file-if-needed temp-path template-path output-path)
   output-path
