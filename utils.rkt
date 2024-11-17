@@ -6,6 +6,7 @@
          pollen/setup
          racket/file
          racket/match
+         racket/path
          racket/string
          sugar
          (prefix-in config: "config.rkt")
@@ -94,3 +95,11 @@
        [(member trimmed '("#t" "#true" "true")) #t]
        [(member trimmed '("#f" "#false" "false")) #f]
        [else (error "Invalid boolean string:" str)])]))
+
+; this is pretty indiscriminate, but it's fine for now
+; TODO: make this more robust (check pdf pagetree for this file?)
+(define (pdfable? file-path)
+  (string-contains? file-path ".poly"))
+
+(define (pdf-name page)
+  (string-replace (path->string (file-name-from-path page)) "poly.pm" "pdf"))

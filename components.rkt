@@ -39,3 +39,9 @@
 (define theorem (make-component-function 'theorem))
 (define definition (make-component-function 'definition))
 (define lemma (make-component-function 'lemma))
+
+
+(define (pdf-download-button source-file)
+  `(span [(class "downloads")]
+         (a [(class "download pdf") (hx-boost "false") (href ,(pdf-name source-file))]
+            "Download PDF")))
