@@ -9,8 +9,9 @@
 
 (define (hyperlink-decoder inline-tx)
   (define (hyperlinker url . words)
-    `(a [[href ,url] (class "align-text-bottom text-[#0077AA] no-underline hover:underline")]
-        ,@words))
+    (case (current-poly-target)
+      [(tex pdf) `(txt "\\href{" ,url "}" "{" ,@words "}")]
+      [(html) `(a [[href ,url]] ,@words)]))
 
   (if (eq? 'hyperlink (get-tag inline-tx))
       (apply hyperlinker (get-elements inline-tx))

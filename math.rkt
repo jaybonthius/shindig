@@ -9,7 +9,7 @@
 (define ($ . latex)
   (case (current-poly-target)
     [(html) `(script [(type "math/tex; mode=text")] ,(format "\\(~a\\)" (string-join latex "")))]
-    [(tex pdf) `(txt-noescape "\\(~a\\)" ,(string-join latex ""))]))
+    [(tex pdf) `(txt-noescape "$" ,@latex "$")]))
 
 (define ($$ . latex)
   (case (current-poly-target)

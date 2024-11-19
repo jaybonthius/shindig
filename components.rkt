@@ -4,6 +4,7 @@
          pollen/setup
          pollen/tag
          racket/path
+         racket/string
          sugar
          "config.rkt"
          "utils.rkt")
@@ -15,31 +16,36 @@
         (if (string=? uid "")
             (to-kebab-case title)
             uid))
-  (define id (format "~a-~a" (symbol->string type) uid))
-  (define component
-    `(div [(class ,(format "knowl ~a" type))]
-          (strong ,(if (eq? type 'definition)
-                       title
-                       (apply string-append
-                              (list (string-titlecase (symbol->string type)) ": " title))))
-          (div ,@body)))
 
-  (define abs-path (remove-ext* (hash-ref (current-metas) 'here-path)))
-  (define source (find-relative-path (pollen-dir) abs-path))
-
-  (upsert-xref type id title source)
   (case (current-poly-target)
     [(html)
+     (define id (format "~a-~a" (symbol->string type) uid))
+     (define component
+       `(div [(class ,(format "knowl ~a" type))]
+             (strong ,(if (eq? type 'definition)
+                          title
+                          (apply string-append
+                                 (list (string-titlecase (symbol->string type)) ": " title))))
+             (div ,@body)))
+
+     (define abs-path (remove-ext* (hash-ref (current-metas) 'here-path)))
+     (define source (find-relative-path (pollen-dir) abs-path))
+
+     (upsert-xref type id title source)
+
      `(div ((id ,id) (class "knowl-container")
                      (component-type ,(symbol->string type))
                      (component-id ,uid))
            ,component)]
-    [(tex pdf) "THIS SHOULD BE A REFERENCE TO A COMPONENT"]))
+    [(tex pdf)
+     `(txt ,(format "\\begin{tcolorbox}[~a, title={~a}]" (symbol->string type) title)
+           ,(format "\\label{~a:~a}" (symbol->string type) uid)
+           ,@body
+           "\\end{tcolorbox}")]))
 
 (define theorem (make-component-function 'theorem))
 (define definition (make-component-function 'definition))
 (define lemma (make-component-function 'lemma))
-
 
 (define (pdf-download-button source-file)
   `(span [(class "downloads")]
