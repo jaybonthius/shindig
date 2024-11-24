@@ -12,8 +12,10 @@
          racket/port
          racket/pretty
          racket/string
+         simple-qr
          sugar
-         txexpr)
+         txexpr
+         (prefix-in config: "config.rkt"))
 
 (provide (all-defined-out))
 
@@ -159,3 +161,79 @@
                       (format "~a \\\\" (string-join row " & ")))
                     "\n"))
      `(txt-noescape ,(format "\\begin{tabular}{~a}" col-format) ,rows "\\end{tabular}")]))
+
+(define (sidenote . text)
+  (case (current-poly-target)
+    [(html)
+     `(@ (button
+          [(type "button") (class "sidenote-button") (_ "on click toggle .show on next .sidenote")]
+          (i [(class "fa-solid fa-plus")]))
+         (span [(class "sidenote")] (span ,@text)))]
+    [(tex pdf) `(txt "\\sidenote{" ,@text "}")]))
+
+(define (geogebra source #:fullwidth (fullwidth #t) #:aspect-ratio (aspect-ratio "16/9") text)
+  (define url
+    (format
+     "https://www.geogebra.org/material/iframe/id/~a/width/~a/height/~a/border/ffffff/sfsb/false/smb/false/stb/false/stbh/false/ai/false/asb/false/sri/true/rc/false/ld/false/sdz/false/ctl/false"
+     source
+     (if fullwidth "960" "720")
+     "540"))
+  (case (current-poly-target)
+    [(html)
+     `(iframe ((scrolling "no") (src ,url)
+                                (class ,(string-append "geogebra" (if fullwidth " fullwidth" "")))
+                                (loading "lazy")
+                                (style ,(format "aspect-ratio: ~a" aspect-ratio))
+                                (frameBorder "0")))]
+    [(tex pdf)
+     (define qr-code-name (format "geogebra-~a.png" source))
+     (define qr-code-path (build-path (config:qr-codes-path) qr-code-name))
+     (define url (format "https://www.geogebra.org/classic/~a" source))
+     (qr-write url (path->string qr-code-path))
+     `(txt ,(format "\\includegraphics[width=0.5\\textwidth]{~a}" (path->string qr-code-path)))
+
+     `(txt ,(string-append "\\begin{minipage}{0.2\\textwidth}\n"
+                           "  \\includegraphics[width=\\textwidth]{"
+                           (path->string qr-code-path)
+                           "}\n"
+                           "\\end{minipage}\\hfill"
+                           "\\begin{minipage}{0.75\\textwidth}\n"
+                           "  \\vspace{1em}\\url{"
+                           url
+                           "}\n"
+                           "\\end{minipage}"))]))
+
+(define (iframe url
+                #:fullwidth (fullwidth #t)
+                #:aspect-ratio (aspect-ratio "16/9")
+                #:scrolling (scrolling #t))
+  (case (current-poly-target)
+    [(html)
+     `(iframe ((scrolling ,(if scrolling "yes" "no"))
+               (src ,url)
+               (class ,(string-append "iframe" (if fullwidth " fullwidth" "")))
+               (loading "lazy")
+               (style ,(format "aspect-ratio: ~a" aspect-ratio))
+               (frameBorder "0")))]
+    [(tex pdf)
+     (define url-hash (equal-hash-code url))
+     (define qr-code-name (format "iframe-~a.png" url-hash))
+     (define qr-code-path (build-path (config:qr-codes-path) qr-code-name))
+     (qr-write url (path->string qr-code-path))
+     `(txt ,(string-append "\\begin{minipage}{0.2\\textwidth}\n"
+                           "  \\includegraphics[width=\\textwidth]{"
+                           (path->string qr-code-path)
+                           "}\n"
+                           "\\end{minipage}\\hfill"
+                           "\\begin{minipage}{0.75\\textwidth}\n"
+                           "  \\vspace{1em}\\url{"
+                           url
+                           "}\n"
+                           "\\end{minipage}"))]))
+
+(define (sage-cell #:evaluate-button-text (button-text "Evaluate")
+                   #:template (template "minimal")
+                   . code)
+  (case (current-poly-target)
+    [(html) `(div ((class "compute")) (script ((type "text/x-sage")) ,@code))]
+    [(tex pdf) `(txt "\\begin{pythoncode}\n" ,@code "\n\\end{pythoncode}")]))

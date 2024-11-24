@@ -41,10 +41,13 @@ code as a valid X-expression rather than as a string.
   (case (current-poly-target)
     [(tex pdf)
      (define first-pass
-       (decode-elements elements
-                        #:inline-txexpr-proc (compose1 txt-decode hyperlink-decoder)
-                        #:string-proc (compose1 ltx-escape-str smart-quotes)
-                        #:exclude-tags '(script style fig txt-noescape)))
+       (decode-elements
+        elements
+        #:inline-txexpr-proc (compose1 txt-decode hyperlink-decoder)
+        #:string-proc
+        (compose1
+         ltx-escape-str) ; TODO: make smart quotes work for latex + txt-noescape work for sage cell
+        #:exclude-tags '(script style fig txt-noescape)))
      (make-txexpr 'body null (decode-elements first-pass #:inline-txexpr-proc txt-decode))]
     [(html)
      (define first-pass
