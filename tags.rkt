@@ -15,6 +15,7 @@
          simple-qr
          sugar
          txexpr
+         rackunit
          (prefix-in config: "config.rkt"))
 
 (provide (all-defined-out))
@@ -62,10 +63,6 @@
   (case (current-poly-target)
     [(tex pdf) `(txt-noescape ,(format "\\href{~a}{~a}" url (string-join text)))]
     [(html) `(a [(href ,url)] ,@text)]))
-
-; Images
-(define (image src alt)
-  `(img ((src ,src) (alt ,alt))))
 
 ; Code
 (define (inline-code . code)
@@ -237,3 +234,118 @@
   (case (current-poly-target)
     [(html) `(div ((class "compute")) (script ((type "text/x-sage")) ,@code))]
     [(tex pdf) `(txt "\\begin{pythoncode}\n" ,@code "\n\\end{pythoncode}")]))
+
+(define (caption . text)
+  (case (current-poly-target)
+    [(tex pdf) `(tex pdf "\\marginnote{" ,@text "}")]
+    [(html) `(span [(class "marginnote caption")] ,@text)]))
+
+(define (image source #:fullwidth [fullwidth #f] . text)
+  (define image-path (format "~astatic/media/images/~a" (config:baseurl) source))
+  (define fig-class (if fullwidth "fullwidth" "halfwidth"))
+  (define figure-env (if fullwidth "figure*" "figure"))
+  (define ltx-caption
+    (if (eq? empty text)
+        ""
+        (format "\\caption{~a}" text)))
+  (case (current-poly-target)
+    [(tex pdf)
+     `(txt ,(format "\\begin{~a}[htbp]\\centering\\includegraphics[width=\\textwidth]" figure-env)
+           ,(format "{~a}" image-path)
+           ,ltx-caption
+           ,(format "\\end{~a}" figure-env))]
+    [(html)
+     `(figure [(class ,fig-class)]
+              (img ([src ,image-path]))
+              ,(if (eq? empty text)
+                   ""
+                   (apply caption text)))]))
+
+(define (youtube-iframe url
+                        #:fullwidth (fullwidth #t)
+                        #:aspect-ratio (aspect-ratio "16/9")
+                        #:controls (controls #t))
+
+  (define video-id (extract-youtube-id url))
+
+  (case (current-poly-target)
+    [(html)
+     `(iframe
+       ((src ,(format "https://www.youtube.com/embed/~a~a" video-id (if controls "" "?controls=0")))
+        (class ,(string-append "youtube-iframe" (if fullwidth " fullwidth" "")))
+        (loading "lazy")
+        (style ,(format "aspect-ratio: ~a" aspect-ratio))
+        (frameBorder "0")
+        (allow
+         "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture")
+        (allowFullScreen "")))]
+    [(tex pdf)
+     (define full-url (format "https://youtu.be/~a" video-id))
+     (define url-hash (equal-hash-code full-url))
+     (define qr-code-name (format "youtube-~a.png" url-hash))
+     (define qr-code-path (build-path (config:qr-codes-path) qr-code-name))
+     (qr-write full-url (path->string qr-code-path))
+     `(txt ,(string-append "\\begin{minipage}{0.2\\textwidth}\n"
+                           "  \\includegraphics[width=\\textwidth]{"
+                           (path->string qr-code-path)
+                           "}\n"
+                           "\\end{minipage}\\hfill"
+                           "\\begin{minipage}{0.75\\textwidth}\n"
+                           "  \\vspace{1em}\\url{"
+                           full-url
+                           "}\n"
+                           "\\end{minipage}"))]))
+
+(define (extract-youtube-id url)
+  ; First try to match standard youtube.com URLs
+  (define watch-pattern #px"[?&]v=([a-zA-Z0-9_-]{11})")
+  (define shorts-pattern #px"/shorts/([a-zA-Z0-9_-]{11})")
+  (define embed-pattern #px"/embed/([a-zA-Z0-9_-]{11})")
+  (define short-pattern #px"youtu\\.be/([a-zA-Z0-9_-]{11})")
+  (define direct-pattern #px"^[a-zA-Z0-9_-]{11}$")
+
+  (define (extract-match pattern)
+    (define matches (regexp-match pattern url))
+    (and matches (let ([id (cadr matches)]) (and (regexp-match? direct-pattern id) id))))
+
+  (or (extract-match watch-pattern)
+      (extract-match shorts-pattern)
+      (extract-match embed-pattern)
+      (extract-match short-pattern)
+      (and (regexp-match? direct-pattern url) url)
+      (error 'extract-youtube-id "Invalid YouTube URL or video ID: ~a" url)))
+
+; Unit Tests
+(module+ test
+  (test-case "Standard YouTube URLs"
+    (check-equal? (extract-youtube-id "https://www.youtube.com/watch?v=dQw4w9WgXcQ") "dQw4w9WgXcQ")
+    (check-equal? (extract-youtube-id "https://youtube.com/watch?v=dQw4w9WgXcQ") "dQw4w9WgXcQ")
+    (check-equal? (extract-youtube-id "https://www.youtube.com/watch?v=dQw4w9WgXcQ&feature=share")
+                  "dQw4w9WgXcQ"))
+
+  (test-case "Short YouTube URLs"
+    (check-equal? (extract-youtube-id "https://youtu.be/dQw4w9WgXcQ") "dQw4w9WgXcQ")
+    (check-equal? (extract-youtube-id "https://youtu.be/dQw4w9WgXcQ?t=10") "dQw4w9WgXcQ")
+    (check-equal? (extract-youtube-id "https://youtu.be/SXOHCiukZPw?si=VegHYqE-JDLm5nAy")
+                  "SXOHCiukZPw"))
+
+  (test-case "Embed URLs"
+    (check-equal? (extract-youtube-id "https://www.youtube.com/embed/dQw4w9WgXcQ") "dQw4w9WgXcQ")
+    (check-equal? (extract-youtube-id "<iframe src=\"https://www.youtube.com/embed/dQw4w9WgXcQ\">")
+                  "dQw4w9WgXcQ"))
+
+  (test-case "YouTube Shorts URLs"
+    (check-equal? (extract-youtube-id "https://www.youtube.com/shorts/dQw4w9WgXcQ") "dQw4w9WgXcQ")
+    (check-equal? (extract-youtube-id "https://youtube.com/shorts/dQw4w9WgXcQ?feature=share")
+                  "dQw4w9WgXcQ"))
+
+  (test-case "Direct video IDs"
+    (check-equal? (extract-youtube-id "dQw4w9WgXcQ") "dQw4w9WgXcQ"))
+
+  (test-case "Invalid URLs"
+    (check-exn exn:fail? (λ () (extract-youtube-id "https://www.youtube.com/watch")))
+    (check-exn exn:fail? (λ () (extract-youtube-id "https://youtu.be/")))
+    (check-exn exn:fail? (λ () (extract-youtube-id "not-a-youtube-url")))
+    (check-exn exn:fail? (λ () (extract-youtube-id "dQw4w9WgXc"))) ; Too short
+    (check-exn exn:fail? (λ () (extract-youtube-id "dQw4w9WgXcQQ")))) ; Too long
+  )
