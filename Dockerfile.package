@@ -1,0 +1,4 @@
+FROM nicheceviche/shindig-dev:latest
+USER root
+WORKDIR /app
+RUN raco pkg install --auto --clone shindig https://github.com/jaybonthius/shindig.git || true
