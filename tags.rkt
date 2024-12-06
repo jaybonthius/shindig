@@ -138,7 +138,6 @@
     (for/list ([text-row (in-list text-rows)])
       (for/list ([text-cell (in-list (string-split text-row "|"))])
         (string-trim text-cell))))
-  (pretty-print rows-of-text-cells)
   (case (current-poly-target)
     [(html)
      (match-define (list tr-tag td-tag th-tag) (map default-tag-function '(tr td th)))

@@ -83,7 +83,6 @@
 
 (define (upsert-tag id source entry subentry)
   (define db-file (build-path (config:sqlite-path) "book-index.sqlite"))
-
   (define conn (try-connect db-file))
   (when conn
     (with-handlers ([exn:fail? (lambda (e)

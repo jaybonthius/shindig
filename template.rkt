@@ -117,15 +117,14 @@
   (with-handlers ([exn:fail? (lambda (e)
                                (displayln (format "Database error: ~a" (exn-message e)))
                                #f)])
-    (let ([result (query-rows db-connection "SELECT * FROM book_index")])
-      (if (null? result)
-          #f
-          (map (lambda (row)
-                 (make-hash (list (cons 'id (vector-ref row 0))
-                                  (cons 'source (vector-ref row 1))
-                                  (cons 'entry (vector-ref row 2))
-                                  (cons 'subentry (vector-ref row 3)))))
-               result)))))
+    (define result (query-rows db-connection "SELECT * FROM book_index"))
+    (if (null? result)
+        #f
+        (for/list ([row (in-list result)])
+          (make-hash (list (cons 'id (vector-ref row 0))
+                           (cons 'source (vector-ref row 1))
+                           (cons 'entry (vector-ref row 2))
+                           (cons 'subentry (vector-ref row 3))))))))
 
 (define (page-index-link source id)
   (define link (format "~a#~a" (pollen-request source) id))
@@ -135,43 +134,44 @@
   (case (current-poly-target)
     [(html)
      (define all-tags (get-all-index-tags))
-     (define processed-tags
-       (for/fold ([result '()]) ([group (group-by (lambda (h) (hash-ref h 'entry)) all-tags)])
-         (define entry-name (hash-ref (car group) 'entry))
-         (pretty-print (format "Group: ~a" group))
-         (define sources
-           (for/list ([member group]
-                      #:when (equal? (hash-ref member 'subentry) ""))
-             (displayln (format "Source: ~a" member))
-             (hash 'source (hash-ref member 'source) 'id (hash-ref member 'id))))
+     (case all-tags
+       [(#f)
+        (displayln "No tags found.")
+        "Placeholder for a future index."]
+       [else
+        (define processed-tags
+          (for/fold ([result '()]) ([group (group-by (lambda (h) (hash-ref h 'entry)) all-tags)])
+            (define entry-name (hash-ref (car group) 'entry))
+            (define sources
+              (for/list ([member group]
+                         #:when (equal? (hash-ref member 'subentry) ""))
+                (hash 'source (hash-ref member 'source) 'id (hash-ref member 'id))))
 
-         (define subentries
-           (for/fold ([result '()])
-                     ([group (filter (lambda (g) (not (equal? (hash-ref (car g) 'subentry) "")))
-                                     (group-by (lambda (h) (hash-ref h 'subentry)) group))])
-             (define subentry-name (hash-ref (car group) 'subentry))
+            (define subentries
+              (for/fold ([result '()])
+                        ([group (filter (lambda (g) (not (equal? (hash-ref (car g) 'subentry) "")))
+                                        (group-by (lambda (h) (hash-ref h 'subentry)) group))])
+                (define subentry-name (hash-ref (car group) 'subentry))
 
-             (define sources
-               (for/list ([member group])
-                 (displayln (format "Source: ~a" member))
-                 (hash 'source (hash-ref member 'source) 'id (hash-ref member 'id))))
+                (define sources
+                  (for/list ([member group])
+                    (hash 'source (hash-ref member 'source) 'id (hash-ref member 'id))))
 
-             (cons (hash 'subentry subentry-name 'sources sources) result)))
-         (displayln "-----")
-         (cons (hash 'entry entry-name 'sources sources 'subentries subentries) result)))
+                (cons (hash 'subentry subentry-name 'sources sources) result)))
+            (cons (hash 'entry entry-name 'sources sources 'subentries subentries) result)))
 
-     `(div [(class "index")]
-           (h2 "Index")
-           (ul ,@(for/list ([entry processed-tags])
-                   `(li ,(hash-ref entry 'entry)
-                        (@ (ul ,@(for/list ([source (hash-ref entry 'sources)])
-                                   `(li ,(page-index-link (hash-ref source 'source)
-                                                          (hash-ref source 'id)))))
-                           ,(unless (null? (hash-ref entry 'subentries))
-                              `(ul ,@(for/list ([source (hash-ref entry 'subentries)])
-                                       (@ `(li ,(hash-ref source 'subentry))
-                                          `(ul ,@(for/list ([source (hash-ref source 'sources)])
-                                                   `(li ,(page-index-link (hash-ref source 'source)
-                                                                          (hash-ref source
-                                                                                    'id))))))))))))))]
+        `(div [(class "index")]
+              (h2 "Index")
+              (ul ,@(for/list ([entry processed-tags])
+                      `(li ,(hash-ref entry 'entry)
+                           (@ (ul ,@(for/list ([source (hash-ref entry 'sources)])
+                                      `(li ,(page-index-link (hash-ref source 'source)
+                                                             (hash-ref source 'id)))))
+                              ,(unless (null? (hash-ref entry 'subentries))
+                                 `(ul ,@(for/list ([source (hash-ref entry 'subentries)])
+                                          (@ `(li ,(hash-ref source 'subentry))
+                                             `(ul ,@(for/list ([source (hash-ref source 'sources)])
+                                                      `(li ,(page-index-link
+                                                             (hash-ref source 'source)
+                                                             (hash-ref source 'id))))))))))))))])]
     [(tex pdf) "\\printindex"]))
