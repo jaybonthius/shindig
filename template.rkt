@@ -1,6 +1,7 @@
 #lang racket
 
-(require pollen/core
+(require db
+         pollen/core
          pollen/pagetree
          pollen/setup
          pollen/template
@@ -13,8 +14,9 @@
 (provide (all-defined-out))
 
 (define (make-page-link page-path)
-  `(a [(href ,(pollen-request (symbol->string page-path)))
-       (hx-get ,(pollen-request (symbol->string page-path)))
+  (define request (pollen-request (symbol->string page-path)))
+  `(a [(href ,request)
+       (hx-get ,request)
        (hx-select "#main")
        (hx-swap "outerHTML")
        (hx-target "#main")
@@ -25,14 +27,14 @@
 
 (define (make-toc-item page-path)
   (define child-pages (children page-path))
-  (if (or (not child-pages) (null? child-pages))
-      (if (has-ext? page-path "html")
-          `(li ,(make-page-link page-path))
-          '())
-      (if (has-ext? page-path "html")
-          `(li ,(make-page-link page-path) 
-              (ul ,@(map make-toc-item child-pages)))
-          `(li ,@(map make-toc-item child-pages)))))  ; Just render children for non-pages
+  (cond
+    [(or (not child-pages) (null? child-pages))
+     (if (has-ext? page-path "html")
+         `(li ,(make-page-link page-path))
+         '())]
+    [(has-ext? page-path "html")
+     `(li ,(make-page-link page-path) (ul ,@(map make-toc-item child-pages)))]
+    [else `(li ,@(map make-toc-item child-pages))])) ; Just render children for non-pages
 
 (define (generate-toc pagetree)
   (case (current-poly-target)
@@ -87,6 +89,9 @@
      (define frontmatter-pages
        (filter (λ (page) (string-prefix? (symbol->string page) "frontmatter/")) all-pages))
 
+     (define backmatter-pages
+       (filter (λ (page) (string-prefix? (symbol->string page) "backmatter/")) all-pages))
+
      (define chapter-pages
        (flatten (filter-map (λ (page)
                               (and (string-prefix? (symbol->string page) "chapter/")
@@ -101,5 +106,72 @@
                         (string-join (map wrap-input frontmatter-pages) "\n")
                         "\\tableofcontents"
                         "\\mainmatter"
-                        (string-join (map wrap-input chapter-pages) "\n"))
+                        (string-join (map wrap-input chapter-pages) "\n")
+                        "\\backmatter"
+                        (string-join (map wrap-input backmatter-pages) "\n"))
                   "\n")]))
+
+(define (get-all-index-tags)
+  (define db-connection
+    (sqlite3-connect #:database (build-path (config:sqlite-path) "book-index.sqlite")))
+  (with-handlers ([exn:fail? (lambda (e)
+                               (displayln (format "Database error: ~a" (exn-message e)))
+                               #f)])
+    (let ([result (query-rows db-connection "SELECT * FROM book_index")])
+      (if (null? result)
+          #f
+          (map (lambda (row)
+                 (make-hash (list (cons 'id (vector-ref row 0))
+                                  (cons 'source (vector-ref row 1))
+                                  (cons 'entry (vector-ref row 2))
+                                  (cons 'subentry (vector-ref row 3)))))
+               result)))))
+
+(define (page-index-link source id)
+  (define link (format "~a#~a" (pollen-request source) id))
+  `(a [(href ,link)] ,link))
+
+(define (generate-index)
+  (case (current-poly-target)
+    [(html)
+     (define all-tags (get-all-index-tags))
+     (define processed-tags
+       (for/fold ([result '()]) ([group (group-by (lambda (h) (hash-ref h 'entry)) all-tags)])
+         (define entry-name (hash-ref (car group) 'entry))
+         (pretty-print (format "Group: ~a" group))
+         (define sources
+           (for/list ([member group]
+                      #:when (equal? (hash-ref member 'subentry) ""))
+             (displayln (format "Source: ~a" member))
+             (hash 'source (hash-ref member 'source) 'id (hash-ref member 'id))))
+
+         (define subentries
+           (for/fold ([result '()])
+                     ([group (filter (lambda (g) (not (equal? (hash-ref (car g) 'subentry) "")))
+                                     (group-by (lambda (h) (hash-ref h 'subentry)) group))])
+             (define subentry-name (hash-ref (car group) 'subentry))
+
+             (define sources
+               (for/list ([member group])
+                 (displayln (format "Source: ~a" member))
+                 (hash 'source (hash-ref member 'source) 'id (hash-ref member 'id))))
+
+             (cons (hash 'subentry subentry-name 'sources sources) result)))
+         (displayln "-----")
+         (cons (hash 'entry entry-name 'sources sources 'subentries subentries) result)))
+
+     `(div [(class "index")]
+           (h2 "Index")
+           (ul ,@(for/list ([entry processed-tags])
+                   `(li ,(hash-ref entry 'entry)
+                        (@ (ul ,@(for/list ([source (hash-ref entry 'sources)])
+                                   `(li ,(page-index-link (hash-ref source 'source)
+                                                          (hash-ref source 'id)))))
+                           ,(unless (null? (hash-ref entry 'subentries))
+                              `(ul ,@(for/list ([source (hash-ref entry 'subentries)])
+                                       (@ `(li ,(hash-ref source 'subentry))
+                                          `(ul ,@(for/list ([source (hash-ref source 'sources)])
+                                                   `(li ,(page-index-link (hash-ref source 'source)
+                                                                          (hash-ref source
+                                                                                    'id))))))))))))))]
+    [(tex pdf) "\\printindex"]))

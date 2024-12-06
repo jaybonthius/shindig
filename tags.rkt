@@ -12,11 +12,13 @@
          racket/port
          racket/pretty
          racket/string
+         rackunit
          simple-qr
          sugar
          txexpr
-         rackunit
-         (prefix-in config: "config.rkt"))
+         uuid
+         (prefix-in config: "config.rkt")
+         (prefix-in utils: "utils.rkt"))
 
 (provide (all-defined-out))
 
@@ -237,8 +239,29 @@
 
 (define (caption . text)
   (case (current-poly-target)
-    [(tex pdf) `(tex pdf "\\marginnote{" ,@text "}")]
+    [(tex pdf) `(txt "\\marginnote{" ,@text "}")]
     [(html) `(span [(class "marginnote caption")] ,@text)]))
+
+(define (tag #:entry [entry ""] #:subentry [subentry ""] . text)
+  (when (and (non-empty-string? subentry) (not (non-empty-string? entry)))
+    (error 'tag "entry must be provided when subentry is provided"))
+
+  (unless (non-empty-string? entry)
+    (set! entry (apply string-append text)))
+
+  (case (current-poly-target)
+    [(tex pdf)
+     (define latex-tag
+       (if (non-empty-string? subentry)
+           (string-append entry "!" subentry)
+           entry))
+     `(txt ,@text "\\index{" ,latex-tag "}")]
+    [(html)
+     (define abs-path (remove-ext* (hash-ref (current-metas) 'here-path)))
+     (define source (find-relative-path (config:pollen-dir) abs-path))
+     (define html-id (format "tag-~a" (equal-hash-code (string-join (list entry subentry) " "))))
+     (utils:upsert-tag html-id source entry subentry)
+     `(span ((class "tag") [id ,html-id]) ,@text)]))
 
 (define (image source #:fullwidth [fullwidth #f] . text)
   (define image-path (format "~astatic/media/images/~a" (config:baseurl) source))

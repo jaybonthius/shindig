@@ -21,7 +21,7 @@
                  (cond
                    [(config:pretty-url)
                     (if (has-ext? req "html")
-                        (remove-ext req)
+                        (path->string (remove-ext req))
                         req)]
                    [(has-ext? req "html") req]
                    [else (path->string (add-ext req "html"))])))
@@ -54,8 +54,7 @@
   (define template-path (build-path output-dir "template.html.p"))
   (unless (file-exists? template-path)
     (with-output-to-file template-path
-                         (lambda ()
-                           (displayln "◊(map ->html (select-from-doc 'body here))"))))
+                         (lambda () (displayln "◊(map ->html (select-from-doc 'body here))"))))
 
   (render-to-file-if-needed temp-path template-path output-path)
   output-path
@@ -77,6 +76,27 @@
        id
        title
        (path->string source))
+
+      (disconnect conn)
+
+      (printf "Database operations completed successfully.\n"))))
+
+(define (upsert-tag id source entry subentry)
+  (define db-file (build-path (config:sqlite-path) "book-index.sqlite"))
+
+  (define conn (try-connect db-file))
+  (when conn
+    (with-handlers ([exn:fail? (lambda (e)
+                                 (printf "Error during database operations: ~a\n" (exn-message e)))])
+
+      (query-exec
+       conn
+       "INSERT OR REPLACE INTO book_index (id, source, entry, subentry)
+                   VALUES (?, ?, ?, ?)"
+       id
+       (path->string source)
+       entry
+       subentry)
 
       (disconnect conn)
 
