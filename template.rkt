@@ -43,7 +43,7 @@
      (if (or (not top-level-pages) (null? top-level-pages))
          ""
          `(nav [(class "table-of-contents")]
-               (h2 "Shindig")
+               (a [(href "/")] (h2 ,(config:book-title)))
                (ul ,@(map make-toc-item top-level-pages))))]
     [(tex pdf)
      (define top-level-pages (children 'pagetree-root pagetree))
@@ -80,7 +80,7 @@
      (if (or (not top-level-pages) (null? top-level-pages))
          ""
          `(nav [(class "table-of-contents")]
-               (h2 "Shindig")
+               (a [(href "/")] (h2 ,(config:book-title)))
                (ul ,@(map make-toc-item top-level-pages))))]
     [(tex pdf)
      (define top-level-pages (children 'pagetree-root pagetree))

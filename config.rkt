@@ -18,3 +18,5 @@
 
 (define baseurl (make-parameter ""))
 (define pretty-url (make-parameter ""))
+(define book-title (make-parameter ""))
+(define author (make-parameter ""))
