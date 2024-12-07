@@ -28,15 +28,14 @@
 (require racket/runtime-path)
 (define-runtime-path template.EXT "template.EXT")
 
-(define-heading chapter 'h1)
-(define-heading section 'h2)
+; (define-heading subsection 'h2)
 
 (define (h1 . text)
   (case (current-poly-target)
     [(html) `(h1 ,@text)]
     [(tex pdf) `(txt ,@text)]))
 
-(define (h2 . text)
+(define (subsection . text)
   (case (current-poly-target)
     [(html) `(h2 ,@text)]
     [(tex pdf) `(txt "\\subsection*{" ,@text "}")]))
@@ -131,6 +130,18 @@
      (define list-tag-function (make-list-function 'ul))
      (define elem-list (apply list-tag-function elems))
      (list* (get-tag elem-list) (get-attrs elem-list) (get-elements elem-list))]))
+
+(define (motivating-questions . elems)
+  (case (current-poly-target)
+    [(tex pdf)
+     (define new-elems (double-newline-replace elems))
+     `(txt "\\textbf{Motivating Questions} \\begin{itemize}" ,@new-elems "\\end{itemize}")]
+    [(html)
+     (define list-tag-function (make-list-function 'ul))
+     (define elem-list (apply list-tag-function elems))
+     `(div [(class "motivating-questions")]
+           (h3 "Motivating Questions")
+           ,(list* (get-tag elem-list) (get-attrs elem-list) (get-elements elem-list)))]))
 
 (define (quick-table . tx-elements)
   (define text-rows (filter-not whitespace? tx-elements))
@@ -262,23 +273,23 @@
      (utils:upsert-tag html-id source entry subentry)
      `(span ((class "tag") [id ,html-id]) ,@text)]))
 
-(define (image source #:fullwidth [fullwidth #f] . text)
-  (define image-path (format "~astatic/media/images/~a" (config:baseurl) source))
+(define (image source #:fullwidth [fullwidth #f] #:width [width 1.0] . text)
+  (define server-image-path (format "~astatic/media/images/~a" (config:baseurl) source))
+  (define local-image-path (build-path (config:images-path) source))
   (define fig-class (if fullwidth "fullwidth" "halfwidth"))
-  (define figure-env (if fullwidth "figure*" "figure"))
-  (define ltx-caption
-    (if (eq? empty text)
-        ""
-        (format "\\caption{~a}" text)))
+  (define width-str (format "~a\\textwidth" width))
   (case (current-poly-target)
     [(tex pdf)
-     `(txt ,(format "\\begin{~a}[htbp]\\centering\\includegraphics[width=\\textwidth]" figure-env)
-           ,(format "{~a}" image-path)
-           ,ltx-caption
-           ,(format "\\end{~a}" figure-env))]
+     `(txt "\\begin{center}"
+           ,(format "\\includegraphics[width=~a]" width-str)
+           ,(format "{~a}" local-image-path)
+           ,@(if (eq? empty text)
+                 '()
+                 `("\\captionof{figure}{" ,@text "}"))
+           "\\end{center}")]
     [(html)
      `(figure [(class ,fig-class)]
-              (img ([src ,image-path]))
+              (img ([src ,server-image-path] [style ,(format "width: ~a%" (* width 100))]))
               ,(if (eq? empty text)
                    ""
                    (apply caption text)))]))
