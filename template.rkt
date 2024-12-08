@@ -47,7 +47,7 @@
      (if (or (not top-level-pages) (null? top-level-pages))
          ""
          `(nav [(class "table-of-contents")]
-               (a [(href "/")] (h2 ,(config:book-title)))
+               (a [(href ,(pollen-request "index.html"))] (h2 ,(config:book-title)))
                (ul ,@(map make-toc-item top-level-pages))))]
     [(tex pdf)
      (define top-level-pages (children 'pagetree-root pagetree))
@@ -78,7 +78,7 @@
      (if (or (not top-level-pages) (null? top-level-pages))
          ""
          `(nav [(class "table-of-contents")]
-               (a [(href "/")] (h2 ,(config:book-title)))
+               (a [(href ,(pollen-request "index.html"))] (h2 ,(config:book-title)))
                (ul ,@(map make-toc-item top-level-pages))))]
     [(tex pdf)
      (define top-level-pages (children 'pagetree-root pagetree))
