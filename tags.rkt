@@ -62,8 +62,17 @@
 (define (link url
               . text)
   (case (current-poly-target)
-    [(tex pdf) `(txt-noescape ,(format "\\href{~a}{~a}" url (string-join text)))]
-    [(html) `(a [(href ,url)] ,@text)]))
+    [(tex pdf)
+     `(txt-noescape ,(format "\\href{~a}{~a}"
+                             url
+                             (if (null? text)
+                                 url
+                                 (string-join text))))]
+    [(html)
+     `(a [(href ,url)]
+         ,@(if (null? text)
+               (list url)
+               text))]))
 
 ; Code
 (define (inline-code . code)
