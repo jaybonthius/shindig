@@ -39,7 +39,11 @@
 (define (generate-toc pagetree)
   (case (current-poly-target)
     [(html)
-     (define top-level-pages (children 'pagetree-root pagetree))
+     (define top-level-pages 
+       (filter (λ (page) 
+                (not (equal? page 'index.html)))
+              (children 'pagetree-root pagetree)))
+     (displayln (format "Top-level pages: ~a" top-level-pages))
      (if (or (not top-level-pages) (null? top-level-pages))
          ""
          `(nav [(class "table-of-contents")]
@@ -66,12 +70,6 @@
                         "\\mainmatter"
                         (string-join (map wrap-include chapter-pages) "\n"))
                   "\n")]))
-
-(define (chapter-section-include chapter-pages)
-  (define (wrap-include filename)
-    (format "\\input{~a}" (remove-ext filename)))
-
-  (string-join (list (string-join (map wrap-include chapter-pages) "\n")) "\n"))
 
 (define (generate-input-toc pagetree)
   (case (current-poly-target)
